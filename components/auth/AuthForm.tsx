@@ -28,6 +28,7 @@ export function AuthForm({authActionType}: AuthFormProps ) {
 
     const formData = new FormData();
     formData.append('email', email);
+    formData.append('authActionType', authActionType);
 
     const result: AuthActionResult = await sendMagicLink(formData);
 
@@ -41,12 +42,28 @@ export function AuthForm({authActionType}: AuthFormProps ) {
   };
 
   const handleGoogleSignIn = async () =>{
-    setGoogleLoading(true)
-    const result: OAuthSignInResult = await signInWithGoogle()
-    if (result.success && result.url) {
-      window.location.href = result.url; // Redirect to Google
-    } else {
-      console.error("Google Sign-In Error:", result.error);
+    setGoogleLoading(true);
+    setMessage(''); // Clear previous messages
+    setError('');   // Clear previous errors
+
+    try {
+      const result: OAuthSignInResult = await signInWithGoogle();
+
+      if (result.success && result.url) {
+        window.location.href = result.url; // Redirect to Google
+        // No need to setGoogleLoading(false) here due to redirection
+      } else {
+        // Handle errors returned by signInWithGoogle (e.g., Supabase specific errors)
+        const errorMessage = result.error || "Google Sign-In failed. Please try again.";
+        console.error("Google Sign-In Error:", errorMessage);
+        setError(errorMessage);
+        setGoogleLoading(false);
+      }
+    } catch (err: any) {
+      // Handle unexpected errors during the signInWithGoogle call
+      console.error("Google Sign-In Exception:", err);
+      const errorMessage = err.message || "An unexpected error occurred during Google Sign-In.";
+      setError(errorMessage);
       setGoogleLoading(false);
     }
   }

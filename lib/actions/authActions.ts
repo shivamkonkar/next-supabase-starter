@@ -11,9 +11,14 @@ export interface AuthActionResult {
 export async function sendMagicLink(formData: FormData): Promise<AuthActionResult> {
   const supabase = await createClient();
   const email = formData.get('email') as string;
+  const authActionType = formData.get('authActionType') as 'login' | 'signup';
 
   if (!email) {
     return { success: false, error: 'Email is required.' };
+  }
+
+  if (!authActionType) {
+    return { success: false, error: 'Auth action type is required.' };
   }
 
   const redirectTo = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback`;
@@ -21,13 +26,13 @@ export async function sendMagicLink(formData: FormData): Promise<AuthActionResul
   const { error } = await supabase.auth.signInWithOtp({
     email: email,
     options: {
-      emailRedirectTo: redirectTo, 
-      shouldCreateUser: false,
+      emailRedirectTo: redirectTo,
+      shouldCreateUser: authActionType === 'signup',
     },
   });
 
   if (error) {
-    return { success: false, error: `Failed to send login link: ${error.message}` };
+    return { success: false, error: `Failed to send ${authActionType === 'signup' ? 'signup' : 'login'} link: ${error.message}` };
   }
   return { success: true, message: `Login link sent to ${email}. Please check your inbox.` };
 }
